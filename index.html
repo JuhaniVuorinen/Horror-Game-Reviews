@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Horror Review Tierlist</title>
+<style>
+:root {
+    --bg: #030303;
+    --panel: #0a0a0a;
+    --text: #cfcfcf;
+    --accent: #9aff9a;
+    --danger: #ff1a1a;
+}
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    color: var(--text);
+    background: radial-gradient(circle at center, #080808 0%, #000 100%);
+    overflow-x: hidden;
+}
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle, transparent 60%, rgba(0,0,0,0.9));
+    pointer-events: none;
+}
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    opacity: 0.08;
+    pointer-events: none;
+    background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+}
+.side {
+    position: fixed;
+    top: 0;
+    width: 100px;
+    height: 100%;
+    pointer-events: none;
+}
+.left { left: 0; }
+.right { right: 0; }
+.pumpkin {
+    display: block;
+    font-size: 42px;
+    margin: 50px auto;
+    filter: drop-shadow(0 0 10px orange);
+    animation: float 4s ease-in-out infinite alternate;
+}
+@keyframes float {
+    from { transform: translateY(0); }
+    to { transform: translateY(15px); }
+}
+.container {
+    max-width: 620px;
+    margin: 60px auto;
+    padding: 25px;
+    background: linear-gradient(145deg, #0a0a0a, #050505);
+    border: 1px solid #222;
+    border-radius: 12px;
+    box-shadow: 0 0 40px rgba(0,0,0,0.9), inset 0 0 30px rgba(0,0,0,0.9);
+}
+h1 {
+    text-align: center;
+    letter-spacing: 2px;
+    color: #e0e0e0;
+    text-shadow: 0 0 8px rgba(154,255,154,0.3);
+}
+.review {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    background: linear-gradient(145deg, #0a0a0a, #050505);
+    border: 1px solid #222;
+}
+.review:hover {
+    border-color: #333;
+    box-shadow: 0 0 15px rgba(154,255,154,0.1);
+}
+.review-header {
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+</style>
+</head>
+<body>
+
+<div class="side left"><span class="pumpkin">🎃</span><span class="pumpkin">🎃</span><span class="pumpkin">🎃</span></div>
+<div class="side right"><span class="pumpkin">🎃</span><span class="pumpkin">🎃</span><span class="pumpkin">🎃</span></div>
+
+<div class="container">
+    <h1>Horror Review Tierlist</h1>
+    <p style="text-align:center;"><small><a href="editor.html" style="color:#9aff9a;">Editor (Private)</a></small></p>
+    <div id="reviews"></div>
+</div>
+
+<script>
+async function renderReviews() {
+    const container = document.getElementById("reviews");
+    container.innerHTML = "<p>Loading reviews...</p>";
+
+    try {
+        const res = await fetch('reviews.json');
+        const reviews = await res.json();
+        container.innerHTML = "";
+
+        if (reviews.length === 0) {
+            container.innerHTML = "<p>No reviews yet.</p>";
+            return;
+        }
+
+        reviews.forEach(r => {
+            let aspectsHTML = "";
+            for (let a in r.aspects) {
+                const d = r.aspects[a];
+                aspectsHTML += `<div><strong>${a}:</strong> ${d.tier} — ${d.text||''}</div>`;
+            }
+
+            container.innerHTML += `
+            <div class="review">
+                <div class="review-header">${r.title}</div>
+                <div>${aspectsHTML}</div>
+            </div>`;
+        });
+    } catch(e) {
+        container.innerHTML = "<p style='color:#ff6666;'>Could not load reviews.</p>";
+    }
+}
+renderReviews();
+</script>
+</body>
+</html>
