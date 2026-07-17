@@ -2,102 +2,72 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Horror Review Editor</title>
+<title>Horror Review Tierlist</title>
 <style>
-:root {--bg: #030303;--panel: #0a0a0a;--text: #cfcfcf;--accent: #9aff9a;}
-body {margin:0;font-family:Arial,sans-serif;color:var(--text);background:radial-gradient(circle at center,#080808 0%,#000 100%);}
-.container {max-width:620px;margin:40px auto;padding:25px;background:#0a0a0a;border:1px solid #222;border-radius:12px;}
-h1 {text-align:center;}
-input, textarea, select, button {padding:10px;margin:8px 0;width:100%;background:#111;border:1px solid #333;color:white;}
-button {cursor:pointer;background:#222;}
-button:hover {background:#9aff9a;color:black;}
-.review {margin:12px 0;padding:12px;background:#111;border:1px solid #333;border-radius:8px;}
+:root {
+    --bg: #030303; --panel: #0a0a0a; --text: #cfcfcf; --accent: #9aff9a;
+}
+body {
+    margin: 0; font-family: Arial, sans-serif; color: var(--text);
+    background: radial-gradient(circle at center, #080808 0%, #000 100%);
+}
+.side { position: fixed; top: 0; width: 100px; height: 100%; pointer-events: none; }
+.left { left: 0; } .right { right: 0; }
+.pumpkin { font-size: 42px; margin: 50px auto; display: block; animation: float 4s infinite alternate; }
+@keyframes float { from {transform: translateY(0);} to {transform: translateY(15px);} }
+.container {
+    max-width: 620px; margin: 60px auto; padding: 25px;
+    background: linear-gradient(145deg, #0a0a0a, #050505);
+    border: 1px solid #222; border-radius: 12px;
+}
+h1 { text-align: center; color: #e0e0e0; }
+.review {
+    margin: 12px 0; padding: 12px; background: #111; border: 1px solid #222; border-radius: 8px;
+}
 </style>
 </head>
 <body>
 
+<div class="side left">🎃🎃🎃</div>
+<div class="side right">🎃🎃🎃</div>
+
 <div class="container">
-    <h1>Horror Review Editor</h1>
-    <button onclick="toggleForm()">+ New Review</button>
-
-    <div id="form" style="display:none;">
-        <input id="title" placeholder="Game Title">
-        <div id="aspects"></div>
-        <button onclick="addReview()">Save Review</button>
-    </div>
-
-    <div id="reviews"></div>
+    <h1>Horror Review Tierlist</h1>
+    <div id="reviews"><p>Loading reviews...</p></div>
 </div>
 
 <script>
-// === YOUR KEYS ===
+// === CHANGE THESE TWO LINES ===
 const SUPABASE_URL = "https://suahnxysnelbhdkogpro.supabase.co";
 const SUPABASE_KEY = "sb_publishable_tVlPbeAMSMnxG36oFU7ZJw_R4XOwAJZ";
-
-const aspectList = ["Gameplay","Story","Sound Design","Characters","Atmosphere"];
 
 async function loadReviews() {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/reviews?select=*&order=created_at.desc`, {
         headers: { "apikey": SUPABASE_KEY }
     });
     const reviews = await res.json();
+    
     const container = document.getElementById("reviews");
-    container.innerHTML = "<h2>All Reviews</h2>";
+    container.innerHTML = "";
+
+    if (reviews.length === 0) {
+        container.innerHTML = "<p>No reviews yet.</p>";
+        return;
+    }
 
     reviews.forEach(r => {
         let html = "";
         for (let a in r.aspects) {
-            html += `<div><strong>${a}:</strong> ${r.aspects[a].tier} - ${r.aspects[a].text}</div>`;
+            html += `<div><strong>${a}:</strong> ${r.aspects[a].tier} — ${r.aspects[a].text||''}</div>`;
         }
-        container.innerHTML += `<div class="review"><strong>${r.title}</strong><div>${html}</div></div>`;
-    });
-}
-
-function toggleForm() {
-    const f = document.getElementById("form");
-    f.style.display = f.style.display === "none" ? "block" : "none";
-}
-
-function loadAspects() {
-    const container = document.getElementById("aspects");
-    container.innerHTML = "";
-    aspectList.forEach(a => {
         container.innerHTML += `
-        <div style="margin:12px 0;">
-            <strong>${a}</strong><br>
-            <select id="${a}"><option>S</option><option>A</option><option>B</option><option>C</option><option>D</option></select>
-            <textarea id="${a}-text" placeholder="Comment..."></textarea>
+        <div class="review">
+            <strong>${r.title}</strong>
+            <div>${html}</div>
         </div>`;
     });
 }
 
-async function addReview() {
-    const title = document.getElementById("title").value.trim();
-    if (!title) return alert("Title is required");
-
-    let aspects = {};
-    aspectList.forEach(a => {
-        aspects[a] = {
-            tier: document.getElementById(a).value,
-            text: document.getElementById(a+"-text").value.trim()
-        };
-    });
-
-    await fetch(`${SUPABASE_URL}/rest/v1/reviews`, {
-        method: "POST",
-        headers: {
-            "apikey": SUPABASE_KEY,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ title, aspects })
-    });
-
-    alert("Review saved successfully!");
-    document.getElementById("form").style.display = "none";
-    loadReviews();   // Refresh list
-}
-
-loadAspects();
 loadReviews();
 </script>
 </body>
