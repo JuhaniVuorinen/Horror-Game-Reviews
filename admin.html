@@ -73,7 +73,7 @@ input, textarea, select {
     box-sizing: border-box;
 }
 
-input:focus, textarea:focus {
+input:focus, textarea:focus, select:focus {
     border-color: var(--accent);
 }
 
@@ -106,7 +106,19 @@ textarea {
     
     <h3>Add New Review</h3>
     <input id="title" placeholder="Game Title">
-    <div id="aspects"></div>
+    
+    <label style="margin-top: 6px; display: block;">Game Category / Genre:</label>
+    <select id="genre">
+        <option value="action">⚔️ Action / RPG</option>
+        <option value="fps">🎯 FPS / Shooter</option>
+        <option value="strategy">🧠 Strategy / Sim</option>
+        <option value="horror">🎃 Horror Games</option>
+        <option value="sports">⚽ Sports Games</option>
+        <option value="cozy">☕ Cozy Games</option>
+        <option value="indie">💎 Indie Gems</option>
+    </select>
+    
+    <div id="aspects" style="margin-top: 15px;"></div>
     <button onclick="addReview()">Save Review to Cloud</button>
     
     <hr style="border-color:#222; margin: 20px 0;">
@@ -155,6 +167,8 @@ async function addReview(){
     if(!checkAuth()) return;
     
     const title = document.getElementById("title").value;
+    const genre = document.getElementById("genre").value;
+    
     if(!title) return alert("Please enter a game title");
 
     let aspectsData = {};
@@ -165,14 +179,16 @@ async function addReview(){
         };
     });
 
+    // Added the 'genre' field to the row record inserted into the database table
     const { error } = await _supabase
         .from('reviews')
-        .insert([{ title, aspects: aspectsData }]);
+        .insert([{ title, genre, aspects: aspectsData }]);
 
     if(error) {
         alert("Error saving: " + error.message);
     } else {
         document.getElementById("title").value = "";
+        document.getElementById("genre").selectedIndex = 0;
         loadAspects();
         renderReviews();
     }
@@ -206,9 +222,11 @@ async function renderReviews(){
     }
 
     reviews.forEach(r => {
+        // Display both title and genre mapping inside the admin list panel
+        const displayGenre = r.genre ? r.genre.toUpperCase() : "UNASSIGNED";
         container.innerHTML += `
         <div class="review-item">
-            <span><strong>${r.title}</strong></span>
+            <span><strong>${r.title}</strong> <small style="color:#666; margin-left:8px;">[${displayGenre}]</small></span>
             <button onclick="deleteReview(${r.id})" style="background:#200; border-color:#400;">Delete</button>
         </div>`;
     });
