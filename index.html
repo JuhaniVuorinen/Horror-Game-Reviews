@@ -13,6 +13,13 @@
     --text: #cfcfcf;
     --accent: #00d2ff;
     --glow: #0055ff;
+    
+    /* Tier Colors */
+    --tier-s: #ff7f7f;
+    --tier-a: #ffbf7f;
+    --tier-b: #ffff7f;
+    --tier-c: #7fff7f;
+    --tier-d: #7f7fff;
 }
 
 /* 🌑 BACKGROUND */
@@ -127,6 +134,27 @@ h1 {
     font-style: italic;
     padding: 10px 0;
 }
+
+/* 🏷️ INLINE TIER BADGE */
+.tier-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    font-weight: bold;
+    border-radius: 4px;
+    color: #000;
+    margin-left: 5px;
+}
+
+/* 🗓️ METADATA TRACKER ROW */
+.review-meta-info {
+    display: flex;
+    gap: 15px;
+    font-size: 12px;
+    color: #8fa0bc;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #112244;
+}
 </style>
 </head>
 
@@ -135,22 +163,7 @@ h1 {
 <div class="container">
     <h1>Game Review Tierlists</h1>
     
-    <!-- Genre Container Sections -->
-    <div class="genre-section">
-        <div class="genre-title">⚔️ Action / RPG</div>
-        <div id="genre-action"><p class="no-reviews">Loading...</p></div>
-    </div>
-
-    <div class="genre-section">
-        <div class="genre-title">🎯 FPS / Shooter</div>
-        <div id="genre-fps"><p class="no-reviews">Loading...</p></div>
-    </div>
-
-    <div class="genre-section">
-        <div class="genre-title">🧠 Strategy / Sim</div>
-        <div id="genre-strategy"><p class="no-reviews">Loading...</p></div>
-    </div>
-
+    <!-- All 12 Genre Container Sections Layout Mapping -->
     <div class="genre-section">
         <div class="genre-title">🎃 Horror Games</div>
         <div id="genre-horror"><p class="no-reviews">Loading...</p></div>
@@ -167,8 +180,48 @@ h1 {
     </div>
 
     <div class="genre-section">
-        <div class="genre-title">💎 Indie Gems</div>
+        <div class="genre-title">🦖 Action Games</div>
+        <div id="genre-action"><p class="no-reviews">Loading...</p></div>
+    </div>
+
+    <div class="genre-section">
+        <div class="genre-title">🧠 Puzzle Games</div>
+        <div id="genre-puzzle"><p class="no-reviews">Loading...</p></div>
+    </div>
+
+    <div class="genre-section">
+        <div class="genre-title">🗺️ Adventure Games</div>
+        <div id="genre-adventure"><p class="no-reviews">Loading...</p></div>
+    </div>
+
+    <div class="genre-section">
+        <div class="genre-title">🧙 RPG Games</div>
+        <div id="genre-rpg"><p class="no-reviews">Loading...</p></div>
+    </div>
+
+    <div class="genre-section">
+        <div class="genre-title">🏎️ Racing Games</div>
+        <div id="genre-racing"><p class="no-reviews">Loading...</p></div>
+    </div>
+
+    <div class="genre-section">
+        <div class="genre-title">🏗️ Simulation Games</div>
+        <div id="genre-simulation"><p class="no-reviews">Loading...</p></div>
+    </div>
+
+    <div class="genre-section">
+        <div class="genre-title">♟️ Strategy Games</div>
+        <div id="genre-strategy"><p class="no-reviews">Loading...</p></div>
+    </div>
+
+    <div class="genre-section">
+        <div class="genre-title">💎 Indie Games</div>
         <div id="genre-indie"><p class="no-reviews">Loading...</p></div>
+    </div>
+
+    <div class="genre-section">
+        <div class="genre-title">🎮 Multiplayer Games</div>
+        <div id="genre-multiplayer"><p class="no-reviews">Loading...</p></div>
     </div>
 </div>
 
@@ -185,18 +238,23 @@ function toggleReview(id){
 
 async function renderReviews(){
     const sections = {
-        action: document.getElementById("genre-action"),
-        fps: document.getElementById("genre-fps"),
-        strategy: document.getElementById("genre-strategy"),
         horror: document.getElementById("genre-horror"),
         sports: document.getElementById("genre-sports"),
         cozy: document.getElementById("genre-cozy"),
-        indie: document.getElementById("genre-indie")
+        action: document.getElementById("genre-action"),
+        puzzle: document.getElementById("genre-puzzle"),
+        adventure: document.getElementById("genre-adventure"),
+        rpg: document.getElementById("genre-rpg"),
+        racing: document.getElementById("genre-racing"),
+        simulation: document.getElementById("genre-simulation"),
+        strategy: document.getElementById("genre-strategy"),
+        indie: document.getElementById("genre-indie"),
+        multiplayer: document.getElementById("genre-multiplayer")
     };
 
     // Clear loading text
     for (let key in sections) {
-        sections[key].innerHTML = "";
+        if (sections[key]) sections[key].innerHTML = "";
     }
 
     // Pull raw data directly from the cloud database
@@ -207,25 +265,48 @@ async function renderReviews(){
 
     if (error) {
         for (let key in sections) {
-            sections[key].innerHTML = "Error loading reviews.";
+            if (sections[key]) sections[key].innerHTML = "Error loading reviews.";
         }
         return;
     }
 
-    let counts = { action: 0, fps: 0, strategy: 0, horror: 0, sports: 0, cozy: 0, indie: 0 };
+    let counts = { 
+        horror: 0, sports: 0, cozy: 0, action: 0, puzzle: 0, 
+        adventure: 0, rpg: 0, racing: 0, simulation: 0, 
+        strategy: 0, indie: 0, multiplayer: 0 
+    };
 
     if (reviews && reviews.length > 0) {
         reviews.forEach((r)=>{
-            // Determine the target genre container (defaults to action if it doesn't match/exist yet)
-            let genre = (r.genre || 'action').toLowerCase();
-            if (!sections[genre]) genre = 'action'; 
+            let genre = (r.genre || 'horror').toLowerCase();
+            if (!sections[genre]) genre = 'horror'; 
+
+            // Formulate Playtime and Completion Date string block
+            let metaHTML = "";
+            if (r.playtime || r.date_finished) {
+                metaHTML += `<div class="review-meta-info">`;
+                if (r.playtime) {
+                    metaHTML += `<span>⏱️ <strong>Playtime:</strong> ${r.playtime}</span>`;
+                }
+                if (r.date_finished) {
+                    // Formats date visually from YYYY-MM-DD to cleaner layout
+                    const d = new Date(r.date_finished);
+                    const formattedDate = isNaN(d.getTime()) ? r.date_finished : d.toLocaleDateString(undefined, {year: 'numeric', month: 'short', day: 'numeric'});
+                    metaHTML += `<span>📅 <strong>Finished:</strong> ${formattedDate}</span>`;
+                }
+                metaHTML += `</div>`;
+            }
 
             let aspectsHTML = "";
             for(let a in r.aspects){
+                let tierLetter = (r.aspects[a].tier || 'C').toUpperCase();
+                let badgeColor = `var(--tier-${tierLetter.toLowerCase()}, #fff)`;
+
                 aspectsHTML += `
                 <div style="margin-bottom: 8px;">
-                    <strong style="color: var(--accent);">${a}:</strong> ${r.aspects[a].tier}<br>
-                    <small style="color:#aaa;">${r.aspects[a].text || ''}</small>
+                    <strong style="color: var(--accent);">${a}:</strong> 
+                    <span class="tier-badge" style="background-color: ${badgeColor};">${tierLetter}</span><br>
+                    <small style="color:#aaa; display:block; margin-top:2px;">${r.aspects[a].text || ''}</small>
                 </div>`;
             }
 
@@ -235,6 +316,7 @@ async function renderReviews(){
                     <span>${r.title}</span>
                 </div>
                 <div class="review-content" id="review-${r.id}">
+                    ${metaHTML}
                     ${aspectsHTML}
                 </div>
             </div>`;
@@ -245,7 +327,7 @@ async function renderReviews(){
 
     // If any section remains empty, print empty state message
     for (let key in sections) {
-        if (counts[key] === 0) {
+        if (sections[key] && counts[key] === 0) {
             sections[key].innerHTML = "<p class='no-reviews'>No reviews posted in this section yet!</p>";
         }
     }
