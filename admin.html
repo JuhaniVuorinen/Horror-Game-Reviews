@@ -92,6 +92,15 @@ textarea {
     justify-content: space-between;
     align-items: center;
 }
+
+.meta-group {
+    display: flex;
+    gap: 10px;
+    margin: 6px 0;
+}
+.meta-group div {
+    flex: 1;
+}
 </style>
 </head>
 
@@ -108,15 +117,32 @@ textarea {
     <input id="title" placeholder="Game Title">
     
     <label style="margin-top: 6px; display: block;">Game Category / Genre:</label>
-    <select id="genre">
-        <option value="action">⚔️ Action / RPG</option>
-        <option value="fps">🎯 FPS / Shooter</option>
-        <option value="strategy">🧠 Strategy / Sim</option>
+    <select id="genre" onchange="loadAspects()">
         <option value="horror">🎃 Horror Games</option>
         <option value="sports">⚽ Sports Games</option>
         <option value="cozy">☕ Cozy Games</option>
-        <option value="indie">💎 Indie Gems</option>
+        <option value="action">🦖 Action Games</option>
+        <option value="puzzle">🧠 Puzzle Games</option>
+        <option value="adventure">🗺️ Adventure Games</option>
+        <option value="rpg">🧙 RPG Games</option>
+        <option value="racing">🏎️ Racing Games</option>
+        <option value="simulation">🏗️ Simulation Games</option>
+        <option value="strategy">♟️ Strategy Games</option>
+        <option value="indie">💎 Indie Games</option>
+        <option value="multiplayer">🎮 Multiplayer Games</option>
     </select>
+
+    <div class="meta-group">
+        <div>
+            <label style="font-size: 13px;">Playtime:</label>
+            <!-- Changed type to text for free-writing exact times -->
+            <input type="text" id="playtime" placeholder="e.g., 42.5 hours, 15h 30m">
+        </div>
+        <div>
+            <label style="font-size: 13px;">Date Finished:</label>
+            <input type="date" id="dateFinished">
+        </div>
+    </div>
     
     <div id="aspects" style="margin-top: 15px;"></div>
     <button onclick="addReview()">Save Review to Cloud</button>
@@ -127,18 +153,39 @@ textarea {
 </div>
 
 <script>
-// Initialize Supabase connection using your project credentials
+// Initialize Supabase connection
 const supabaseUrl = 'https://suahnxysnelbhdkogpro.supabase.co';
 const supabaseKey = 'sb_publishable_tVlPbeAMSMnxG36oFU7ZJw_R4XOwAJZ';
 const SECRET_PASSWORD = 'Nalle2017jjv'; // Change this to your password!
 const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-const aspectList = ["Gameplay","Story","Sound Design","Characters","Atmosphere"];
+const baseAspects = ["Gameplay", "Sound Design"];
+const genreSpecificAspects = {
+    horror: ["Story", "Atmosphere", "Pacing", "Scare Factor"],
+    sports: ["Realism", "Controls", "Game Modes"],
+    cozy: ["Atmosphere", "Art Style", "Relaxation Level"],
+    action: ["Story", "Characters", "Combat Mechanics"],
+    puzzle: ["Level Design", "Difficulty Curve", "Mechanics Innovation"],
+    adventure: ["Story", "Exploration", "World Building"],
+    rpg: ["Story", "Character Build Depth", "Quest Design"],
+    racing: ["Physics & Handling", "Track Variety", "Vehicle Customization"],
+    simulation: ["Complexity", "Realism Depth", "UI Navigation"],
+    strategy: ["Complexity", "AI Systems", "Replay Value"],
+    indie: ["Story", "Innovation", "Art Style"],
+    multiplayer: ["Netcode & Servers", "Balance", "Matchmaking"]
+};
+
+let dynamicAspectList = [];
 
 function loadAspects(){
     const container = document.getElementById("aspects");
+    const chosenGenre = document.getElementById("genre").value;
+    
+    const extraFields = genreSpecificAspects[chosenGenre] || ["Story", "Characters", "Atmosphere"];
+    dynamicAspectList = [...baseAspects, ...extraFields];
+    
     container.innerHTML = "";
-    aspectList.forEach(a=>{
+    dynamicAspectList.forEach(a=>{
         container.innerHTML += `
         <div style="margin-bottom:12px;">
             <strong>${a}</strong>
@@ -168,27 +215,35 @@ async function addReview(){
     
     const title = document.getElementById("title").value;
     const genre = document.getElementById("genre").value;
+    const playtime = document.getElementById("playtime").value;
+    const dateFinished = document.getElementById("dateFinished").value;
     
     if(!title) return alert("Please enter a game title");
 
     let aspectsData = {};
-    aspectList.forEach(a=>{
+    dynamicAspectList.forEach(a=>{
         aspectsData[a] = {
             tier: document.getElementById(a).value,
             text: document.getElementById(a+"-text").value
         };
     });
 
-    // Added the 'genre' field to the row record inserted into the database table
     const { error } = await _supabase
         .from('reviews')
-        .insert([{ title, genre, aspects: aspectsData }]);
+        .insert([{ 
+            title, 
+            genre, 
+            playtime: playtime || null, // Sent directly as a string instead of parsed integer
+            date_finished: dateFinished || null, 
+            aspects: aspectsData 
+        }]);
 
     if(error) {
         alert("Error saving: " + error.message);
     } else {
         document.getElementById("title").value = "";
-        document.getElementById("genre").selectedIndex = 0;
+        document.getElementById("playtime").value = "";
+        document.getElementById("dateFinished").value = "";
         loadAspects();
         renderReviews();
     }
@@ -222,7 +277,6 @@ async function renderReviews(){
     }
 
     reviews.forEach(r => {
-        // Display both title and genre mapping inside the admin list panel
         const displayGenre = r.genre ? r.genre.toUpperCase() : "UNASSIGNED";
         container.innerHTML += `
         <div class="review-item">
