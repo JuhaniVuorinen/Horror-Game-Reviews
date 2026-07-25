@@ -2,8 +2,11 @@
 <html lang="fi">
 <head>
 <meta charset="UTF-8">
-<title>Kaupupelit - Juhanin Backlog & Tierlist</title>
+<title>Pelihuone - Juhanin Backlog & Tierlist</title>
+<!-- Include Supabase Library -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Base CSS Link -->
 <link rel="stylesheet" href="base.css">
 
 <style>
@@ -11,7 +14,9 @@
     --bg: #020408;
     --panel: #070d19;
     --text: #cfcfcf;
-    --accent: #ff7518;
+    --accent-horror: #ff7518;
+    --accent-adventure: #9d4edd;
+    --accent-other: #00b4d8;
     
     /* Tier Colors */
     --tier-s: #ff7f7f;
@@ -23,59 +28,140 @@
 
 body {
     margin: 0;
+    padding: 20px;
     font-family: Arial, sans-serif;
     color: var(--text);
     background: radial-gradient(circle at center, #050b14 0%, #010307 100%);
-    overflow-x: hidden;
+    min-height: 100vh;
+    box-sizing: border-box;
 }
 
-.container {
-    max-width: 760px;
-    margin: 40px auto;
-    padding: 25px;
-    background: linear-gradient(145deg, var(--panel), #03060c);
-    border: 1px solid #112244;
-    border-radius: 12px;
-    box-shadow: 0 0 40px rgba(0,0,0,0.9);
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle, transparent 60%, rgba(0,0,0,0.9));
+    pointer-events: none;
 }
 
-h1 {
+.main-header {
     text-align: center;
     color: #ffffff;
     text-transform: uppercase;
-    text-shadow: 0 0 8px rgba(255, 117, 24, 0.5);
-    margin-bottom: 30px;
+    text-shadow: 0 0 10px rgba(255, 117, 24, 0.4);
+    margin-bottom: 25px;
+    position: relative;
+    z-index: 10;
+}
+
+/* 3-Panel Layout Container */
+.catalog-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    max-width: 1600px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 10;
+}
+
+@media (max-width: 1200px) {
+    .catalog-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Individual Scrollable Hub Panel */
+.hub-panel {
+    background: linear-gradient(145deg, var(--panel), #03060c);
+    border: 1px solid #112244;
+    border-radius: 12px;
+    box-shadow: 0 0 30px rgba(0,0,0,0.8);
+    padding: 20px;
+    max-height: 80vh;
+    overflow-y: auto;
+    /* Custom Scrollbar for Webkit */
+    scrollbar-width: thin;
+    scrollbar-color: #223355 #03060c;
+}
+
+.hub-panel::-webkit-scrollbar {
+    width: 8px;
+}
+.hub-panel::-webkit-scrollbar-track {
+    background: #03060c;
+    border-radius: 4px;
+}
+.hub-panel::-webkit-scrollbar-thumb {
+    background: #223355;
+    border-radius: 4px;
+}
+.hub-panel::-webkit-scrollbar-thumb:hover {
+    background: #334466;
+}
+
+.hub-title {
+    font-size: 22px;
+    letter-spacing: 2px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    padding-bottom: 8px;
+    text-transform: uppercase;
+    position: sticky;
+    top: -20px;
+    background: var(--panel);
+    z-index: 5;
+    padding-top: 10px;
+}
+
+.hub-title.horror {
+    color: var(--accent-horror);
+    border-bottom: 2px solid var(--accent-horror);
+    text-shadow: 0 0 10px rgba(255, 117, 24, 0.4);
+}
+
+.hub-title.adventure {
+    color: var(--accent-adventure);
+    border-bottom: 2px solid var(--accent-adventure);
+    text-shadow: 0 0 10px rgba(157, 78, 221, 0.4);
+}
+
+.hub-title.other {
+    color: var(--accent-other);
+    border-bottom: 2px solid var(--accent-other);
+    text-shadow: 0 0 10px rgba(0, 180, 216, 0.4);
 }
 
 .category-block {
-    margin-bottom: 40px;
-    border-bottom: 1px solid #112244;
-    padding-bottom: 20px;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
 }
 
 .category-title {
-    font-size: 20px;
-    letter-spacing: 1.5px;
-    color: #ff7518;
-    border-bottom: 2px solid #ff7518;
-    padding-bottom: 6px;
-    margin-bottom: 15px;
+    font-size: 16px;
+    letter-spacing: 1px;
+    color: #a89cc2;
+    border-bottom: 1px dashed #112244;
+    padding-bottom: 4px;
+    margin-bottom: 12px;
     text-transform: uppercase;
 }
 
 .covers-row {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     margin-bottom: 15px;
+    overflow-x: auto;
 }
 
 .cover-img {
-    width: 100px;
-    height: 140px;
+    width: 90px;
+    height: 125px;
     object-fit: cover;
     border-radius: 6px;
     border: 1px solid #223355;
     background: #020408;
+    flex-shrink: 0;
 }
 
 .game-card {
@@ -102,7 +188,7 @@ h1 {
     font-size: 12px;
     color: #4a90e2;
     text-decoration: none;
-    margin-left: 10px;
+    margin-left: 8px;
 }
 
 .store-link:hover {
@@ -141,140 +227,210 @@ h1 {
     color: #556677;
     font-style: italic;
 }
+
+.review-meta-info {
+    display: flex;
+    gap: 15px;
+    font-size: 12px;
+    color: #8fa0bc;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #112244;
+}
 </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>💀 Kauhupelit Tierlist & Catalog</h1>
-    <div id="catalog-container"></div>
-</div>
+<h1 class="main-header">🎮 Backlog & Tierlist Catalog</h1>
+
+<div class="catalog-grid" id="catalog-container"></div>
 
 <script>
-const genreData = [
+const hubData = [
   {
-    category: "TUNNELMALLINEN KAUHU",
-    covers: [
-      "covers/reveil.jpg",
-      "covers/unholy.jpg",
-      "covers/The Bridge Curse Road to Salvation.jpg"
-    ],
-    games: [
-      { name: "The Bridge Curse Road to Salvation", appId: "1611430" },
-      { name: "The Bridge Curse 2: The Extrication", appId: "2331330" },
-      { name: "The 9th Charnel", appId: "2005690" },
-      { name: "Zoochosis", appId: "2458560" },
-      { name: "REVEIL", appId: "809060" },
-      { name: "Rooten", appId: "1584450" },
-      { name: "Unholy", appId: "817020" },
-      { name: "The Nightfall", appId: "611620" },
-      { name: "Ikai", appId: "1315210" },
-      { name: "Lonely Hospital", appId: "", psUrl: "https://store.playstation.com/en-us/product/UP6699-PPSA35099_00-0270408486938467" },
-      { name: "GYLT", appId: "2206210" },
-      { name: "The Midnight Walk", appId: "2863640" },
-      { name: "Y. Village - The Visitors", appId: "2649190" },
-      { name: "The Trap Remake Winter", appId: "", psUrl: "https://store.playstation.com/fi-fi/product/EP6698-PPSA30252_00-0131655598225227" }
+    hubName: "💀 Kauhu",
+    hubClass: "horror",
+    categories: [
+      {
+        category: "TUNNELMALLINEN KAUHU",
+        covers: [
+          "covers/reveil.jpg",
+          "covers/unholy.jpg",
+          "covers/The Bridge Curse Road to Salvation.jpg"
+        ],
+        games: [
+          { name: "The Bridge Curse Road to Salvation", appId: "1611430" },
+          { name: "The Bridge Curse 2: The Extrication", appId: "2331330" },
+          { name: "The 9th Charnel", appId: "2005690" },
+          { name: "Zoochosis", appId: "2458560" },
+          { name: "REVEIL", appId: "809060" },
+          { name: "Rooten", appId: "1584450" },
+          { name: "Unholy", appId: "817020" },
+          { name: "The Nightfall", appId: "611620" },
+          { name: "Ikai", appId: "1315210" },
+          { name: "Lonely Hospital", appId: "", psUrl: "https://store.playstation.com/en-us/product/UP6699-PPSA35099_00-0270408486938467" },
+          { name: "GYLT", appId: "2206210" },
+          { name: "The Midnight Walk", appId: "2863640" },
+          { name: "Y. Village - The Visitors", appId: "2649190" },
+          { name: "The Trap Remake Winter", appId: "", psUrl: "https://store.playstation.com/fi-fi/product/EP6698-PPSA30252_00-0131655598225227" }
+        ]
+      },
+      {
+        category: "PSYKOLOGINEN KAUHU",
+        covers: [
+          "covers/visage.jpg",
+          "covers/madison.jpg",
+          "covers/medium.jpg"
+        ],
+        games: [
+          { name: "Infliction", appId: "692100" },
+          { name: "Unmourned", appId: "3528970" },
+          { name: "What Have You Done, Father?", appId: "2584260" },
+          { name: "Someday You'll Return", appId: "2229350" },
+          { name: "Ad Infinitum", appId: "1234430" },
+          { name: "Case Records: Fear Of Abduction", appId: "2826400" },
+          { name: "Blair Witch", appId: "1092660" },
+          { name: "Madison", appId: "1670870" },
+          { name: "The Medium", appId: "1293160" },
+          { name: "Visage", appId: "594330" },
+          { name: "The Renovator: Origins", appId: "1917550" },
+          { name: "Who's At The Door?", appId: "3690010" },
+          { name: "There's A Gun In The Office", appId: "3291220" },
+          { name: "Devil Inside Us: Roots Of Evil", appId: "1543520" },
+          { name: "Don't Knock Twice", appId: "328590" },
+          { name: "Beyond Hanwell", appId: "2565550" },
+          { name: "Welcome To Hanwell", appId: "611750" },
+          { name: "Incantation", appId: "2328540" },
+          { name: "Necrophosis: Full Consciousness", appId: "2019760" },
+          { name: "Chorus Of Carcosa", appId: "2987750" },
+          { name: "Nightmare Shift", appId: "3212180" },
+          { name: "Dark Atlas: Infernum", appId: "2089630" },
+          { name: "Unsealed: The Mare", appId: "3492710" },
+          { name: "Welcome To Kowloon", appId: "2515240" },
+          { name: "Karma: The Dark World", appId: "1376200" },
+          { name: "POMBERO: The Lord Of The Night", appId: "1368400" },
+          { name: "The Black Within", appId: "2372870" },
+          { name: "The Wellmonts Case", appId: "3648400" },
+          { name: "Lunacy: Saint Rhodes", appId: "874450" },
+          { name: "File Destined", appId: "2257460" },
+          { name: "Cursed New Year", appId: "3296370" },
+          { name: "Emotionless: The Last Ticket", appId: "3570000" },
+          { name: "CAPTURED", appId: "3114010" },
+          { name: "CAPTURED 2", appId: "3390880" },
+          { name: "Project Songbird", appId: "3180410" },
+          { name: "The Gap", appId: "1458300" },
+          { name: "The Devil Is In The Details", appId: "2790790" },
+          { name: "Hannah", appId: "1466870" }
+        ]
+      },
+      {
+        category: "2D KAUHUPELIT",
+        covers: [
+          "covers/thecoma.jpg",
+          "covers/fnaf.jpg",
+          "covers/distraint.jpg"
+        ],
+        games: [
+          { name: "The Coma: Recut", appId: "600090" },
+          { name: "The Coma 2: Vicious Sisters", appId: "1045720" },
+          { name: "The Coma 2B: Catacomb", appId: "1781890" },
+          { name: "The Coma 3: Bloodlines", appId: "3885590" },
+          { name: "DISTRAINT: Deluxe Edition", appId: "395170" },
+          { name: "DISTRAINT 2", appId: "743390" },
+          { name: "FNAF: Into The Pit", appId: "2638370" }
+        ]
+      },
+      {
+        category: "SELVITYMISKAUHU",
+        covers: [
+          "covers/agony.jpg",
+          "covers/maidofsker.jpg",
+          "covers/posttrauma.jpg"
+        ],
+        games: [
+          { name: "She's Leaving", appId: "3062610" },
+          { name: "Maid Of Sker", appId: "826940" },
+          { name: "Agony", appId: "487720" },
+          { name: "A.I.L.A", appId: "2695430" },
+          { name: "The Chant", appId: "1577250" },
+          { name: "Labyrinthine", appId: "1302240" },
+          { name: "Amber Alert", appId: "3019800" },
+          { name: "Caretaker", appId: "876880" },
+          { name: "Escape From Umbra", appId: "4830970" },
+          { name: "Do Not Open", appId: "2061710" },
+          { name: "Remorse: The List", appId: "867960" },
+          { name: "Darkwood", appId: "274520" },
+          { name: "It Reaches", appId: "4119360" },
+          { name: "Silverpine Creek", appId: "2966400" },
+          { name: "Dollhouse: Behind The Broken Mirror", appId: "1791660" },
+          { name: "Remothered: Tormented Fathers", appId: "633360" },
+          { name: "Remothered: Broken Porcelain", appId: "1142390" },
+          { name: "The Tag-Along Obsession", appId: "2957670" },
+          { name: "Cruelty", appId: "3011850" },
+          { name: "Backrooms Level X", appId: "3303230" },
+          { name: "Ebola Village", appId: "2306030" },
+          { name: "Zooparasite", appId: "2954450" },
+          { name: "Puppet House", appId: "1707710" },
+          { name: "The Shore", appId: "1297300" },
+          { name: "Post Trauma", appId: "1750030" }
+        ]
+      }
     ]
   },
   {
-    category: "PSYKOLOGINEN KAUHU",
-    covers: [
-      "covers/visage.jpg",
-      "covers/madison.jpg",
-      "covers/medium.jpg"
-    ],
-    games: [
-      { name: "Infliction", appId: "692100" },
-      { name: "Unmourned", appId: "3528970" },
-      { name: "What Have You Done, Father?", appId: "2584260" },
-      { name: "Someday You'll Return", appId: "2229350" },
-      { name: "Ad Infinitum", appId: "1234430" },
-      { name: "Case Records: Fear Of Abduction", appId: "2826400" },
-      { name: "Blair Witch", appId: "1092660" },
-      { name: "Madison", appId: "1670870" },
-      { name: "The Medium", appId: "1293160" },
-      { name: "Visage", appId: "594330" },
-      { name: "The Renovator: Origins", appId: "1917550" },
-      { name: "Who's At The Door?", appId: "3690010" },
-      { name: "There's A Gun In The Office", appId: "3291220" },
-      { name: "Devil Inside Us: Roots Of Evil", appId: "1543520" },
-      { name: "Don't Knock Twice", appId: "328590" },
-      { name: "Beyond Hanwell", appId: "2565550" },
-      { name: "Welcome To Hanwell", appId: "611750" },
-      { name: "Incantation", appId: "2328540" },
-      { name: "Necrophosis: Full Consciousness", appId: "2019760" },
-      { name: "Chorus Of Carcosa", appId: "2987750" },
-      { name: "Nightmare Shift", appId: "3212180" },
-      { name: "Dark Atlas: Infernum", appId: "2089630" },
-      { name: "Unsealed: The Mare", appId: "3492710" },
-      { name: "Welcome To Kowloon", appId: "2515240" },
-      { name: "Karma: The Dark World", appId: "1376200" },
-      { name: "POMBERO: The Lord Of The Night", appId: "1368400" },
-      { name: "The Black Within", appId: "2372870" },
-      { name: "The Wellmonts Case", appId: "3648400" },
-      { name: "Lunacy: Saint Rhodes", appId: "874450" },
-      { name: "File Destined", appId: "2257460" },
-      { name: "Cursed New Year", appId: "3296370" },
-      { name: "Emotionless: The Last Ticket", appId: "3570000" },
-      { name: "CAPTURED", appId: "3114010" },
-      { name: "CAPTURED 2", appId: "3390880" },
-      { name: "Project Songbird", appId: "3180410" },
-      { name: "The Gap", appId: "1458300" },
-      { name: "The Devil Is In The Details", appId: "2790790" },
-      { name: "Hannah", appId: "1466870" }
+    hubName: "🧭 Seikkailu",
+    hubClass: "adventure",
+    categories: [
+      {
+        category: "MYSTEERI / ETSIVÄ",
+        covers: [
+          "covers/detective.jpg",
+          "covers/simulacra.jpg",
+          "covers/guest.jpg"
+        ],
+        games: [
+          { name: "DETECTIVE - Stella Porta case", appId: "2383220" },
+          { name: "DETECTIVE - Rainy night", appId: "3389720" },
+          { name: "DETECTIVE - Minerva case", appId: "2678970" },
+          { name: "DETECTIVE - Scene Crime", appId: "3656420" },
+          { name: "DETECTIVE - The Motel", appId: "2852480" },
+          { name: "Things Too Ugly", appId: "2848750" },
+          { name: "The 7th Guest Remake", appId: "4491360" },
+          { name: "SIMULACRA", appId: "712730" },
+          { name: "P1: Anchor Light", appId: "3842700" },
+          { name: "Is This Game Trying To Kill Me", appId: "2658470" }
+        ]
+      },
+      {
+        category: "TARINAVETOISET & DRAAMA",
+        covers: [
+          "covers/labyrinthine.jpg"
+        ],
+        games: [
+          { name: "The Crimson Maid", appId: "2695260" },
+          { name: "Best Month Ever!", appId: "1684400" },
+          { name: "Of Bird And Cage", appId: "1018250" },
+          { name: "Adam's Venture: Origins", appId: "400360" },
+          { name: "Syberia: The World Before", appId: "1410640" },
+          { name: "Amerzone - The Explorer's Legacy", appId: "2089630" }
+        ]
+      },
+      {
+        category: "KÄVELYSIMULAATTORIT",
+        covers: [],
+        games: [
+          { name: "EDENGATE: The Edge of Life", appId: "1414650" },
+          { name: "Drizzlepath: Picturae", appId: "3273990" },
+          { name: "The Empty Desk", appId: "3244670" },
+          { name: "Portrait Of A Torn", appId: "3059500" }
+        ]
+      }
     ]
   },
   {
-    category: "2D KAUHUPELIT",
-    covers: [
-      "covers/thecoma.jpg",
-      "covers/fnaf.jpg",
-      "covers/distraint.jpg"
-    ],
-    games: [
-      { name: "The Coma: Recut", appId: "600090" },
-      { name: "The Coma 2: Vicious Sisters", appId: "1045720" },
-      { name: "The Coma 2B: Catacomb", appId: "1781890" },
-      { name: "The Coma 3: Bloodlines", appId: "3885590" },
-      { name: "DISTRAINT: Deluxe Edition", appId: "395170" },
-      { name: "DISTRAINT 2", appId: "743390" },
-      { name: "FNAF: Into The Pit", appId: "2638370" }
-    ]
-  },
-  {
-    category: "SELVITYMISKAUHU",
-    covers: [
-      "covers/agony.jpg",
-      "covers/maidofsker.jpg",
-      "covers/posttrauma.jpg"
-    ],
-    games: [
-      { name: "She's Leaving", appId: "3062610" },
-      { name: "Maid Of Sker", appId: "826940" },
-      { name: "Agony", appId: "487720" },
-      { name: "A.I.L.A", appId: "2695430" },
-      { name: "The Chant", appId: "1577250" },
-      { name: "Labyrinthine", appId: "1302240" },
-      { name: "Amber Alert", appId: "3019800" },
-      { name: "Caretaker", appId: "876880" },
-      { name: "Escape From Umbra", appId: "4830970" },
-      { name: "Do Not Open", appId: "2061710" },
-      { name: "Remorse: The List", appId: "867960" },
-      { name: "Darkwood", appId: "274520" },
-      { name: "It Reaches", appId: "4119360" },
-      { name: "Silverpine Creek", appId: "2966400" },
-      { name: "Dollhouse: Behind The Broken Mirror", appId: "1791660" },
-      { name: "Remothered: Tormented Fathers", appId: "633360" },
-      { name: "Remothered: Broken Porcelain", appId: "1142390" },
-      { name: "The Tag-Along Obsession", appId: "2957670" },
-      { name: "Cruelty", appId: "3011850" },
-      { name: "Backrooms Level X", appId: "3303230" },
-      { name: "Ebola Village", appId: "2306030" },
-      { name: "Zooparasite", appId: "2954450" },
-      { name: "Puppet House", appId: "1707710" },
-      { name: "The Shore", appId: "1297300" },
-      { name: "Post Trauma", appId: "1750030" }
-    ]
+    hubName: "📦 Muut",
+    hubClass: "other",
+    categories: []
   }
 ];
 
@@ -298,78 +454,140 @@ async function renderApp() {
     const reviewMap = {};
     if (reviews) {
         reviews.forEach(r => {
-            reviewMap[r.title.toLowerCase().trim()] = r;
+            if (r.title) {
+                reviewMap[r.title.toLowerCase().trim()] = r;
+            }
         });
+    }
+
+    // --- Dynamic Routing for Custom / Unlisted Reviews into "📦 Muut" ---
+    if (reviews) {
+        // Collect all game names listed hardcoded in hubData
+        const knownTitles = new Set();
+        hubData.forEach(hub => {
+            hub.categories.forEach(cat => {
+                cat.games.forEach(g => knownTitles.add(g.name.toLowerCase().trim()));
+            });
+        });
+
+        // Find reviews from Supabase that are NOT hardcoded in hubData
+        const unlistedReviews = reviews.filter(r => r.title && !knownTitles.has(r.title.toLowerCase().trim()));
+
+        // If there are unlisted reviews, append them to the "Muut" panel
+        if (unlistedReviews.length > 0) {
+            const muutHub = hubData.find(h => h.hubClass === "other");
+            if (muutHub) {
+                let unlistedCat = muutHub.categories.find(c => c.category === "MUUT ARVOSTELUT");
+                if (!unlistedCat) {
+                    unlistedCat = { category: "MUUT ARVOSTELUT", covers: [], games: [] };
+                    muutHub.categories.push(unlistedCat);
+                }
+                
+                unlistedReviews.forEach(r => {
+                    if (!unlistedCat.games.some(g => g.name.toLowerCase().trim() === r.title.toLowerCase().trim())) {
+                        unlistedCat.games.push({
+                            name: r.title,
+                            appId: r.app_id || "",
+                            psUrl: r.ps_url || ""
+                        });
+                    }
+                });
+            }
+        }
     }
 
     let html = "";
 
-    genreData.forEach((cat, catIdx) => {
-        html += `<div class="category-block">`;
-        html += `<div class="category-title">${cat.category}</div>`;
-        
-        // Render Covers Row
-        if (cat.covers && cat.covers.length > 0) {
-            html += `<div class="covers-row">`;
-            cat.covers.forEach(c => {
-                html += `<img src="${c}" class="cover-img" alt="Cover" onerror="this.style.display='none'">`;
-            });
-            html += `</div>`;
+    hubData.forEach((hub, hubIdx) => {
+        // Open Dedicated Scrollable Panel
+        html += `<div class="hub-panel">`;
+        html += `<div class="hub-title ${hub.hubClass}">${hub.hubName}</div>`;
+
+        if (hub.categories.length === 0) {
+            html += `<p class="no-review" style="padding-top: 10px;">Ei muita arvosteluja vielä.</p>`;
         }
 
-        // Render Games
-        cat.games.forEach((game, gameIdx) => {
-            const gameId = `g_${catIdx}_${gameIdx}`;
+        hub.categories.forEach((cat, catIdx) => {
+            html += `<div class="category-block">`;
+            html += `<div class="category-title">${cat.category}</div>`;
             
-            // Build Store Link
-            let storeUrl = "";
-            if (game.appId) storeUrl = `https://store.steampowered.com/app/${game.appId}`;
-            else if (game.psUrl) storeUrl = game.psUrl;
-
-            // Check if game has review in Supabase
-            const matchedReview = reviewMap[game.name.toLowerCase().trim()];
-
-            html += `
-            <div class="game-card">
-                <div class="game-header" onclick="toggleReview('${gameId}')">
-                    <div>
-                        <span class="game-name">${game.name}</span>
-                        ${storeUrl ? `<a href="${storeUrl}" target="_blank" class="store-link" onclick="event.stopPropagation()"> Store ↗</a>` : ''}
-                    </div>
-                    <div>
-                        ${matchedReview ? `<span style="color:#ff7518;">★ Review Available</span>` : `<span class="no-review">Unreviewed</span>`}
-                    </div>
-                </div>
-                <div class="review-content" id="review-${gameId}">`;
-
-            if (matchedReview) {
-                // Render review contents
-                for (let aspect in matchedReview.aspects) {
-                    const item = matchedReview.aspects[aspect];
-                    const tierLetter = (item.tier || 'C').toUpperCase();
-                    
-                    let jumpscareHTML = "";
-                    if (item.jumpscares) {
-                        jumpscareHTML = `<span class="jumpscare-badge">👻 ${item.jumpscares} Jumpscares</span>`;
-                    }
-
-                    html += `
-                    <div style="margin-bottom: 8px;">
-                        <strong style="color: var(--accent);">${aspect}:</strong> 
-                        <span class="tier-badge" style="background-color: var(--tier-${tierLetter.toLowerCase()}, #fff);">${tierLetter}</span>
-                        ${jumpscareHTML}<br>
-                        <small style="color:#aaa;">${item.text || ''}</small>
-                    </div>`;
-                }
-            } else {
-                html += `<p class="no-review">This game is in your backlog/wishlist and hasn't been reviewed yet.</p>`;
+            // Render Covers Row if present
+            if (cat.covers && cat.covers.length > 0) {
+                html += `<div class="covers-row">`;
+                cat.covers.forEach(c => {
+                    html += `<img src="${c}" class="cover-img" alt="Cover" onerror="this.style.display='none'">`;
+                });
+                html += `</div>`;
             }
 
-            html += `
-                </div>
-            </div>`;
+            // Render Games
+            cat.games.forEach((game, gameIdx) => {
+                const gameId = `g_${hubIdx}_${catIdx}_${gameIdx}`;
+                
+                // Build Store Link
+                let storeUrl = "";
+                if (game.appId) storeUrl = `https://store.steampowered.com/app/${game.appId}`;
+                else if (game.psUrl) storeUrl = game.psUrl;
+
+                // Check if game has review in Supabase
+                const matchedReview = reviewMap[game.name.toLowerCase().trim()];
+
+                html += `
+                <div class="game-card">
+                    <div class="game-header" onclick="toggleReview('${gameId}')">
+                        <div>
+                            <span class="game-name">${game.name}</span>
+                            ${storeUrl ? `<a href="${storeUrl}" target="_blank" class="store-link" onclick="event.stopPropagation()">Store ↗</a>` : ''}
+                        </div>
+                        <div>
+                            ${matchedReview ? `<span style="color:#ff7518; font-size:12px;">★ Review</span>` : `<span class="no-review">Unreviewed</span>`}
+                        </div>
+                    </div>
+                    <div class="review-content" id="review-${gameId}">`;
+
+                if (matchedReview) {
+                    let metaHTML = "";
+                    if (matchedReview.playtime || matchedReview.date_finished) {
+                        metaHTML += `<div class="review-meta-info">`;
+                        if (matchedReview.playtime) metaHTML += `<span>⏱️ <strong>Playtime:</strong> ${matchedReview.playtime}</span>`;
+                        if (matchedReview.date_finished) metaHTML += `<span>📅 <strong>Finished:</strong> ${matchedReview.date_finished}</span>`;
+                        metaHTML += `</div>`;
+                    }
+
+                    html += metaHTML;
+
+                    if (matchedReview.aspects) {
+                        for (let aspect in matchedReview.aspects) {
+                            const item = matchedReview.aspects[aspect];
+                            const tierLetter = (item.tier || 'C').toUpperCase();
+                            
+                            let jumpscareHTML = "";
+                            if (item.jumpscares && item.jumpscares !== "0") {
+                                jumpscareHTML = `<span class="jumpscare-badge">👻 ${item.jumpscares} Jumpscares</span>`;
+                            }
+
+                            html += `
+                            <div style="margin-bottom: 8px;">
+                                <strong style="color: #ff7518;">${aspect}:</strong> 
+                                <span class="tier-badge" style="background-color: var(--tier-${tierLetter.toLowerCase()}, #fff);">${tierLetter}</span>
+                                ${jumpscareHTML}<br>
+                                <small style="color:#aaa;">${item.text || ''}</small>
+                            </div>`;
+                        }
+                    }
+                } else {
+                    html += `<p class="no-review">This game is in your backlog/wishlist and hasn't been reviewed yet.</p>`;
+                }
+
+                html += `
+                    </div>
+                </div>`;
+            });
+
+            html += `</div>`;
         });
 
+        // Close Panel
         html += `</div>`;
     });
 
