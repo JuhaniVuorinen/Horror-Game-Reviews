@@ -207,6 +207,7 @@ textarea {
 const hubData = [
   {
     hubName: "💀 Kauhu",
+    hubType: "horror",
     categories: [
       {
         category: "TUNNELMALLINEN KAUHU",
@@ -226,7 +227,7 @@ const hubData = [
           { name: "Blair Witch" }, { name: "Madison" }, { name: "The Medium" }, { name: "Visage" },
           { name: "The Renovator: Origins" }, { name: "Who's At The Door?" }, { name: "There's A Gun In The Office" },
           { name: "Devil Inside Us: Roots Of Evil" }, { name: "Don't Knock Twice" }, { name: "Beyond Hanwell" },
-          { name: "Welcome To Hanwell" }, { name: "Incantation" }, { name: "Necrophosis: Full Consciousness" },
+          { name: "Welcome To Hanwell" }, { name: "Incantation" }, { name: "The Occultist" }, { name: "Necrophosis: Full Consciousness" },
           { name: "Chorus Of Carcosa" }, { name: "Nightmare Shift" }, { name: "Dark Atlas: Infernum" },
           { name: "Unsealed: The Mare" }, { name: "Welcome To Kowloon" }, { name: "Karma: The Dark World" },
           { name: "POMBERO: The Lord Of The Night" }, { name: "The Black Within" }, { name: "The Wellmonts Case" },
@@ -260,6 +261,7 @@ const hubData = [
   },
   {
     hubName: "🧭 Seikkailu",
+    hubType: "adventure",
     categories: [
       {
         category: "MYSTEERI / ETSIVÄ",
@@ -300,6 +302,7 @@ const hubData = [
   },
   {
     hubName: "🔮 Muut",
+    hubType: "other",
     isMuutHub: true,
     categories: [
       {
@@ -312,13 +315,20 @@ const hubData = [
   }
 ];
 
+// Defined Aspects per Genre Type
+const aspectPresets = {
+    horror: ["Gameplay", "Story", "Atmosphere", "Sound Design", "Pacing", "Scare Factor"],
+    adventure: ["Gameplay", "Story", "Atmosphere", "Sound Design", "Pacing", "Puzzles", "Open World"],
+    other: ["Gameplay", "Story", "Atmosphere", "Sound Design", "Pacing"]
+};
+
+let currentAspects = aspectPresets.horror;
+
 // Initialize Supabase Connection
 const supabaseUrl = 'https://suahnxysnelbhdkogpro.supabase.co';
 const supabaseKey = 'sb_publishable_tVlPbeAMSMnxG36oFU7ZJw_R4XOwAJZ';
 const SECRET_PASSWORD = 'Nalle2017jjv';
 const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
-
-const reviewAspects = ["Gameplay", "Story", "Atmosphere", "Sound Design", "Pacing", "Scare Factor"];
 
 function populateGameSelect() {
     const select = document.getElementById("gameSelect");
@@ -332,6 +342,7 @@ function populateGameSelect() {
                 const opt = document.createElement("option");
                 opt.value = game.name;
                 opt.textContent = game.displayName || game.name;
+                opt.dataset.hubType = hub.hubType;
                 if (hub.isMuutHub) {
                     opt.dataset.isMuut = "true";
                 }
@@ -347,19 +358,25 @@ function handleGameSelectChange() {
     const container = document.getElementById("customTitleContainer");
     const selectedOption = select.options[select.selectedIndex];
     
-    // Open the custom panel if the item belongs to the "Muut" hub or is the custom option
+    // Toggle custom game input panel
     if (selectedOption.dataset.isMuut === "true" || select.value === "__custom__") {
         container.style.display = "block";
     } else {
         container.style.display = "none";
     }
+
+    // Switch active review aspects dynamically based on Genre Hub
+    const hubType = selectedOption.dataset.hubType || "horror";
+    currentAspects = aspectPresets[hubType] || aspectPresets.other;
+    
+    loadAspects();
 }
 
 function loadAspects() {
     const container = document.getElementById("aspects");
     container.innerHTML = "";
     
-    reviewAspects.forEach(a => {
+    currentAspects.forEach(a => {
         let jumpscareHTML = "";
         if (a === "Scare Factor") {
             jumpscareHTML = `
@@ -418,13 +435,18 @@ async function addReview() {
     if (!title || title.trim() === "") return alert("Please select or type a game title");
 
     let aspectsData = {};
-    reviewAspects.forEach(a => {
-        aspectsData[a] = {
-            tier: document.getElementById(a).value,
-            text: document.getElementById(a + "-text").value
-        };
-        if (a === "Scare Factor" && document.getElementById("jumpscare-count")) {
-            aspectsData[a].jumpscares = document.getElementById("jumpscare-count").value || "0";
+    currentAspects.forEach(a => {
+        const selectEl = document.getElementById(a);
+        const textEl = document.getElementById(a + "-text");
+
+        if (selectEl && textEl) {
+            aspectsData[a] = {
+                tier: selectEl.value,
+                text: textEl.value
+            };
+            if (a === "Scare Factor" && document.getElementById("jumpscare-count")) {
+                aspectsData[a].jumpscares = document.getElementById("jumpscare-count").value || "0";
+            }
         }
     });
 
@@ -509,7 +531,7 @@ async function renderReviews() {
 
 // Initial Setup
 populateGameSelect();
-loadAspects();
+handleGameSelectChange();
 renderReviews();
 </script>
 
